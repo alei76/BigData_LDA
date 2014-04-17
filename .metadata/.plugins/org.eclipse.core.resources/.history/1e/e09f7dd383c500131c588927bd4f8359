@@ -1,0 +1,43 @@
+public class Driver {
+	public int numberOfDocuments;
+	public int vocabularySize;
+	public double[] oldAlpha;
+	public double[] newAlpha;
+	public double[][] hessian;
+	public double[] gradient;
+	
+//Use Jama package to invert matrix.
+	
+	public void retrieveAlpha(){
+		/**
+		 * TODO
+		 */
+	}
+	
+	public double[] retrieveReducerOutput(){
+		return null;
+		/**
+		 * TODO
+		 */
+	}
+	
+	public void setHessian(){
+		/**
+		 * TODO
+		 */
+	}
+	
+	public void setGradient(){
+		/**
+		 * TODO
+		 */
+	}
+	
+	public void setNewAlpha(){
+		/**
+		 * TODO
+		 */
+		
+	}
+	
+}
