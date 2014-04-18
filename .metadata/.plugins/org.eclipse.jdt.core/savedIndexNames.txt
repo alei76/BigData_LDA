@@ -1,14 +1,15 @@
-INDEX VERSION 1.126+C:\Users\Simon-Pierre\Dropbox\EPFL\Master-Semester 2\Big Data\Big Data Project\Recommender System Info\Workspace\.metadata\.plugins\org.eclipse.jdt.core
-1498219845.index
-4108727661.index
-163172794.index
-4155206848.index
-1299022128.index
-1115467115.index
-3065916431.index
-4041092966.index
-30765161.index
-305854171.index
-3974580528.index
-3133528496.index
-1995173708.index
+INDEX VERSION 1.126+C:\Users\Григорий\Documents\GitHub\BigData_LDA\.metadata\.plugins\org.eclipse.jdt.core
+3628204202.index
+418560518.index
+1568074144.index
+3917420041.index
+3955174011.index
+4255916684.index
+3101723380.index
+3548156365.index
+988631253.index
+2465405990.index
+920830564.index
+1322265222.index
+4000500364.index
+2117353887.index

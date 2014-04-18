@@ -181,7 +181,20 @@ public class LdaMapper {
 		}
 		return phiV;
 	}
-
+	
+	public static double[] normalizeVector(double[] vect) {
+		// returns a normalized copy of a given array
+		double sum = 0;
+		for (double v : vect) sum += v;
+		
+		double[] result = vect;
+		for (int i = 0; i < result.length; ++i) {
+			result[i] /= sum;
+		}
+		
+		return result;
+	}
+	
 	public static double[] addPlusVectorMultiplication(double[] sigma, int wordV, double[] phiV ){
 		for (int i = 0; i < phiV.length; i++) {
 			sigma[i] +=(double) wordV*phiV[i];
