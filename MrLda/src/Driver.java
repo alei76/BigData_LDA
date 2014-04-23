@@ -1,5 +1,5 @@
 import Jama.*;
-import Jama.util.Maths;
+
 
 public class Driver {
 	public int D;
@@ -12,10 +12,10 @@ public class Driver {
 	
 //Use Jama package to invert matrix.
 	
-	public Driver(int Dsize, int Ksize, int Vsize){
-		this.D = Dsize;
-		this.K = Ksize;
-		this.V = Vsize;
+	public Driver(){
+		this.D = Parameters.numberOfDocuments;
+		this.K = Parameters.numberOfTopics;
+		this.V = Parameters.sizeOfVocabulary;
 		
 		this.oldAlpha = new double[this.K];
 		this.newAlpha = new double[this.K];
@@ -82,11 +82,14 @@ public class Driver {
 		double[][] invHessian = invH.getArray();
 		
 		this.newAlpha = MathFunctions.NetwtonRaphson(this.oldAlpha, invHessian, this.gradient);
-		
-		
-		
-		
-		
+
+	}
+	
+	public void writeNewAlpha(){
+		/**
+		 * TODO
+		 * Here we need to write the result of the previous computation to the alpha file.
+		 */
 	}
 	
 }

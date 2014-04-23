@@ -7,39 +7,24 @@ import org.apache.hadoop.filecache.*;
 
 
 public class LdaMapper {
-	public static int K;
-	public static int V;
-	public static int D;
-	public static double[][] lambda = new double[V][K];
-	public static double[][] gamma = new double[D][K];
-	public static double[] alpha = new double[K];
-	public static int numberOfMaxGammaIterations = 0;
-	
-	public static void retrieveLambda(){
-		/**
-		 * TODO
-		 */
-		
-		normalizeLambda();
-	}
-	
-	public static void retrieveGamma(){
-		/**
-		 * TODO
-		 */
-	}
-	
-	public static void retrieveAlpha(){
-		/**
-		 * TODO
-		 */
-	}
-	
-	public void setNumGammaIterations(int num){
-		LdaMapper.numberOfMaxGammaIterations = num;
-	}
+
+	//When these are completed, they need to be added inside the mapper class.
+
+
 	
 	public static class Map extends MapReduceBase implements Mapper<IntWritable, Text, Text, DoubleWritable> {
+		
+		//A few useful parameters retrieved from class Parameters.
+		static int K = Parameters.numberOfTopics;
+		static int V = Parameters.sizeOfVocabulary;
+		static int D = Parameters.numberOfDocuments;
+		static int numberOfMaxGammaIterations = Parameters.numberOfMapperIteration;
+		static double[][] lambda;
+		static double[][] gamma;
+		static double[] alpha;
+		
+		
+		
 		private final static DoubleWritable outputValue = new DoubleWritable(1);
 		private Text outputKey = new Text("");
 		
@@ -53,6 +38,74 @@ public class LdaMapper {
 				}
 				sigma[i]=0.0;
 			}
+		}
+		
+		public static boolean convergenceTest(int num){
+			return num < numberOfMaxGammaIterations ;
+
+		}
+		//Sum to 1;
+		//Not quite sure about this : lambda_v,* has to sum to 1 ?
+		public static void normalizeLambda(){
+			double sum = 0.0;
+			for (int i = 0; i < lambda.length; i++) {
+				for(int j = 0; j < lambda[0].length; j++){
+					sum += lambda[i][j];
+				}
+				
+				for(int j = 0; j < lambda[0].length; j++){
+					lambda[i][j] = lambda[i][j]/sum;
+				}
+
+			}
+		}
+
+		public static double[] normalizePhiV(double[] phiV){
+			double sum = 0.0;
+			for(double e : phiV ){
+				sum += e;
+			}
+
+			for (int i = 0; i < phiV.length; i++) {
+				phiV[i] = phiV[i]/sum;
+			}
+			return phiV;
+		}
+
+		public static double[] addPlusVectorMultiplication(double[] sigma, int wordV, double[] phiV ){
+			for (int i = 0; i < phiV.length; i++) {
+				sigma[i] +=(double) wordV*phiV[i];
+			}
+			return sigma;
+		}
+		
+		public static void retrieveLambda(){
+			/**
+			 * TODO
+			 * Read from file the value of lambda
+			 */
+			
+		}
+		
+		public static void retrieveGamma(){
+			/**
+			 * TODO
+			 * Read from file the value of Gamma
+			 */
+		}
+		
+		public static void retrieveAlpha(){
+			/**
+			 * TODO
+			 * Read from file the value of Alpha
+			 */
+		}
+		
+		public static void writeNewGamma(){
+			/**
+			 * TODO
+			 * We need to write the new value of gamma to the correct file.
+			 */
 		}
 		//Ok... What we are going to do here !
 		//We set the input type to be of the form "docId,countW1,countW2,...,countWV"
@@ -133,74 +186,15 @@ public class LdaMapper {
 				//Now here is the tricky part : emit gamma d,k to file.
 				//We need to have a file, be able to clean it, or add new lines to the file.
 				//This demands a little reflection.
+				
+				writeNewGamma();
 
 			}
 
 		}
 	}
 
-	public static boolean convergenceTest(int num){
-		return num < numberOfMaxGammaIterations ;
-		/**
-		 * TODO
-		 */
-		//In their implementation of LDA : use a counter... This is bad but we will do the same for now.
 
-		//Not quite sure on which value to test for evolution.
-	}
-	//Sum to 1;
-	public static void normalizeLambda(){
-		double max = 0.0;
-		for (int i = 0; i < lambda.length; i++) {
-			for(int j = 0; i < lambda[0].length; j++){
-				if(lambda[i][j] > max){
-					max = lambda[i][j];
-
-				}
-			}
-
-		}
-		for (int i = 0; i < lambda.length; i++) {
-			for (int j = 0; j < lambda[0].length; j++) {
-				lambda[i][j] = lambda[i][j]/max;
-			}
-
-		}
-	}
-
-	public static double[] normalizePhiV(double[] phiV){
-		double max = 0.0;
-		for(double e : phiV ){
-			if(e > max){
-				e = max;
-			}
-		}
-
-		for (int i = 0; i < phiV.length; i++) {
-			phiV[i] = phiV[i]/max;
-		}
-		return phiV;
-	}
-	
-	public static double[] normalizeVector(double[] vect) {
-		// returns a normalized copy of a given array
-		double sum = 0;
-		for (double v : vect) sum += v;
-		
-		double[] result = vect;
-		for (int i = 0; i < result.length; ++i) {
-			result[i] /= sum;
-		}
-		
-		return result;
-	}
-	
-	public static double[] addPlusVectorMultiplication(double[] sigma, int wordV, double[] phiV ){
-		for (int i = 0; i < phiV.length; i++) {
-			sigma[i] +=(double) wordV*phiV[i];
-		}
-		return sigma;
-	}
 
 
 }
