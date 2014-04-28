@@ -4,6 +4,7 @@ import java.util.*;
 import org.apache.hadoop.io.*;
 import org.apache.hadoop.mapred.*;
 import org.apache.hadoop.filecache.*;
+import org.apache.hadoop.fs.FileSystem;
 
 
 public class LdaMapper {
@@ -12,7 +13,7 @@ public class LdaMapper {
 
 
 	
-	public static class Map extends MapReduceBase implements Mapper<IntWritable, Text, Text, DoubleWritable> {
+	public static class Map extends MapReduceBase implements Mapper<LongWritable, Text, Text, DoubleWritable> {
 		
 		//A few useful parameters retrieved from class Parameters.
 		static int K = Parameters.numberOfTopics;
@@ -20,6 +21,10 @@ public class LdaMapper {
 		static int D = Parameters.numberOfDocuments;
 		static int numberOfMaxGammaIterations = Parameters.numberOfMapperIteration;
 		static double[][] lambda;
+		
+		/**
+		 * an double array of size nbDoc*nbTopics
+		 */
 		static double[][] gamma;
 		static double[] alpha;
 		
@@ -85,6 +90,9 @@ public class LdaMapper {
 			 * Read from file the value of lambda
 			 */
 			
+			lambda = FileSystemHandler.loadLambdas(Parameters.pathToLambdas);
+			
+			
 		}
 		
 		public static void retrieveGamma(){
@@ -92,6 +100,8 @@ public class LdaMapper {
 			 * TODO
 			 * Read from file the value of Gamma
 			 */
+			gamma = FileSystemHandler.loadGammas(Parameters.pathToGammas);
+			
 		}
 		
 		public static void retrieveAlpha(){
@@ -99,6 +109,7 @@ public class LdaMapper {
 			 * TODO
 			 * Read from file the value of Alpha
 			 */
+			alpha = FileSystemHandler.loadAlpha(Parameters.pathToAlphas);
 		}
 		
 		public static void writeNewGamma(){
@@ -106,6 +117,7 @@ public class LdaMapper {
 			 * TODO
 			 * We need to write the new value of gamma to the correct file.
 			 */
+			
 		}
 		//Ok... What we are going to do here !
 		//We set the input type to be of the form "docId,countW1,countW2,...,countWV"
@@ -117,7 +129,11 @@ public class LdaMapper {
 		// V = Vocab size
 		
 		
-		public void map(IntWritable key, Text value, OutputCollector<Text, DoubleWritable> output, Reporter reporter) throws IOException {
+		public void map(LongWritable key, Text value, OutputCollector<Text, DoubleWritable> output, Reporter reporter) throws IOException {
+			//Three different keys value:
+			//I- 1,k,v 
+			//II- 2,-1,k
+			//III- 3,k,d
 			
 			//We retrieve the values.
 			retrieveLambda();
@@ -125,8 +141,10 @@ public class LdaMapper {
 			retrieveAlpha();
 			setPhiSigma();
 			
-			//We need to parse the line to fill in an array of the words in the doc : 
-			String[] wordsInDocTemp = value.toString().split(",");
+			//We need to parse the line to fill in an array of the words in the doc :
+			String[] formatLine = value.toString().split("\t");
+			int documentId = Integer.parseInt(formatLine[0]); 
+			String[] wordsInDocTemp = formatLine[1].split(" ");
 			int[] wordsInDoc = new int[V];
 			for (int i = 0; i < wordsInDocTemp.length; i++) {
 				wordsInDoc[i] = Integer.parseInt(wordsInDocTemp[i]);
@@ -153,13 +171,13 @@ public class LdaMapper {
 
 				for (int v = 0; v < V; v++) {
 					for (int k = 0; k < K; k++) {
-						phi[v][k] = lambda[v][k]*Math.exp(MathFunctions.diGamma(gamma[key.get()][k]))/sumLambda[k];
+						phi[v][k] = lambda[v][k]*Math.exp(MathFunctions.diGamma(gamma[documentId][k]))/sumLambda[k];
 					}
 					phi[v] = normalizePhiV(phi[v]);
 					sigma = addPlusVectorMultiplication(sigma, wordsInDoc[v], phi[v]);
 				}
 				//We update row vector.
-				gamma[key.get()] = addPlusVectorMultiplication(sigma, 1, alpha);
+				gamma[documentId] = addPlusVectorMultiplication(sigma, 1, alpha);
 
 				//Check to see if converged.
 				notConverged = convergenceTest(numIterations);
@@ -168,26 +186,30 @@ public class LdaMapper {
 			//We want to compute the sum of the gammas : 
 			double sumGamma = 0.0;
 			for(int l = 0; l < K; l++){
-				sumGamma += gamma[key.get()][l];
+				sumGamma += gamma[documentId][l];
 			}
 
 			//No we do the emission of our key value types.
 			for(int k = 0; k < K; k++){
 				for(int v = 0; v < V; v++){
-					outputKey.set(""+k +"," + v);
+					outputKey.set("1,"+k +"," + v);
 					outputValue.set(wordsInDoc[v]*phi[v][k]);
 					output.collect(outputKey, outputValue);
 				}
-				outputKey.set(""+ (-1) + "," + k);
+				outputKey.set("2,"+ (-1) + "," + k);
 
 				//Fuck here I need to comput diGamma(ydk) - diGamma(sum Gama))
-				outputValue.set(MathFunctions.diGamma(gamma[key.get()][k]) - MathFunctions.diGamma(sumGamma));
-
+				outputValue.set(MathFunctions.diGamma(gamma[documentId][k]) - MathFunctions.diGamma(sumGamma));
+				output.collect(outputKey, outputValue);
 				//Now here is the tricky part : emit gamma d,k to file.
 				//We need to have a file, be able to clean it, or add new lines to the file.
 				//This demands a little reflection.
 				
-				writeNewGamma();
+				//write the gamma to the reducer
+				outputKey.set("3,"+k+","+key.get());
+				outputValue.set(gamma[documentId][k]);
+				
+				output.collect(outputKey, outputValue);
 
 			}
 

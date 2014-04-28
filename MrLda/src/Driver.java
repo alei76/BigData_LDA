@@ -1,4 +1,4 @@
-import Jama.*;
+
 
 
 public class Driver {
@@ -27,13 +27,11 @@ public class Driver {
 		/**
 		 * TODO
 		 */
+		oldAlpha = FileSystemHandler.loadAlpha(Parameters.pathToAlphas);
 	}
 	
 	public double[] retrieveReducerOutput(){
-		return null;
-		/**
-		 * TODO
-		 */
+		return FileSystemHandler.loadGradient(Parameters.pathToGradient);
 	}
 	public double sumAlpha(){
 		double sum = 0.0;
@@ -76,10 +74,11 @@ public class Driver {
 		setGradient();
 		setHessian();
 		
-		Matrix H = new Matrix(hessian);
-		Matrix invH = H.inverse();
+		//Matrix H = new Matrix(hessian);
+		//Matrix invH = H.inverse();
 		
-		double[][] invHessian = invH.getArray();
+		//double[][] invHessian = invH.getArray();
+		double[][] invHessian = hessian;
 		
 		this.newAlpha = MathFunctions.NetwtonRaphson(this.oldAlpha, invHessian, this.gradient);
 
@@ -90,6 +89,7 @@ public class Driver {
 		 * TODO
 		 * Here we need to write the result of the previous computation to the alpha file.
 		 */
+		FileSystemHandler.writeVector(Parameters.pathToAlphas, this.newAlpha);
 	}
 	
 }
