@@ -1,10 +1,6 @@
 import java.io.IOException;
-import java.util.*;
-
 import org.apache.hadoop.io.*;
 import org.apache.hadoop.mapred.*;
-import org.apache.hadoop.filecache.*;
-import org.apache.hadoop.fs.FileSystem;
 
 
 public class LdaMapper {
@@ -16,17 +12,17 @@ public class LdaMapper {
 	public static class Map extends MapReduceBase implements Mapper<LongWritable, Text, Text, DoubleWritable> {
 		
 		//A few useful parameters retrieved from class Parameters.
-		static int K = Parameters.numberOfTopics;
-		static int V = Parameters.sizeOfVocabulary;
-		static int D = Parameters.numberOfDocuments;
-		static int numberOfMaxGammaIterations = Parameters.numberOfMapperIteration;
-		static double[][] lambda;
+		private static int K = Parameters.numberOfTopics;
+		private static int V = Parameters.sizeOfVocabulary;
+		private static int D = Parameters.numberOfDocuments;
+		private static int numberOfMaxGammaIterations = Parameters.numberOfMapperIteration;
+		private static double[][] lambda;
 		
 		/**
 		 * an double array of size nbDoc*nbTopics
 		 */
-		static double[][] gamma;
-		static double[] alpha;
+		private static double[][] gamma;
+		private static double[] alpha;
 		
 		
 		
@@ -91,6 +87,8 @@ public class LdaMapper {
 			 */
 			
 			lambda = FileSystemHandler.loadLambdas(Parameters.pathToLambdas);
+			System.out.println("Trying to access a lambda to see if something has been retrieved : " );
+			System.out.println(lambda[0][0]);
 			
 			
 		}
@@ -112,14 +110,8 @@ public class LdaMapper {
 			alpha = FileSystemHandler.loadAlpha(Parameters.pathToAlphas);
 		}
 		
-		public static void writeNewGamma(){
-			/**
-			 * TODO
-			 * We need to write the new value of gamma to the correct file.
-			 */
-			
-		}
-		//Ok... What we are going to do here !
+		
+		
 		//We set the input type to be of the form "docId,countW1,countW2,...,countWV"
 		//We need to figure out how to write on an intermediate file.
 		//We need to figure out how to load all our intermediary values.
@@ -143,7 +135,8 @@ public class LdaMapper {
 			
 			//We need to parse the line to fill in an array of the words in the doc :
 			String[] formatLine = value.toString().split("\t");
-			int documentId = Integer.parseInt(formatLine[0]); 
+			int documentId = Integer.parseInt(formatLine[0])-1; 
+			System.out.println("DOCUMENT ID : " + documentId);
 			String[] wordsInDocTemp = formatLine[1].split(" ");
 			int[] wordsInDoc = new int[V];
 			for (int i = 0; i < wordsInDocTemp.length; i++) {
@@ -206,7 +199,7 @@ public class LdaMapper {
 				//This demands a little reflection.
 				
 				//write the gamma to the reducer
-				outputKey.set("3,"+k+","+key.get());
+				outputKey.set("3,"+k+","+documentId);
 				outputValue.set(gamma[documentId][k]);
 				
 				output.collect(outputKey, outputValue);

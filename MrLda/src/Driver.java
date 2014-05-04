@@ -1,3 +1,5 @@
+import Jama.Matrix;
+
 
 
 
@@ -44,7 +46,8 @@ public class Driver {
 	public void setHessian(){
 
 		double nonDiag = D*MathFunctions.trigamma(sumAlpha());
-		
+		System.out.println(sumAlpha());
+		System.out.println("NON DIAG : " + nonDiag);
 		for(int i = 0; i < K; i++){
 			for(int j = 0; j < K; j++){
 				if(i==j){
@@ -52,7 +55,9 @@ public class Driver {
 				}
 				else{
 					hessian[i][j] = nonDiag;
+					
 				}
+				System.out.println("Hessian : " + hessian[i][j]);
 			}
 		}
 		
@@ -74,11 +79,11 @@ public class Driver {
 		setGradient();
 		setHessian();
 		
-		//Matrix H = new Matrix(hessian);
-		//Matrix invH = H.inverse();
+		Matrix H = new Matrix(hessian);
+		Matrix invH = H.inverse();
 		
-		//double[][] invHessian = invH.getArray();
-		double[][] invHessian = hessian;
+		double[][] invHessian = invH.getArray();
+		//double[][] invHessian = hessian;
 		
 		this.newAlpha = MathFunctions.NetwtonRaphson(this.oldAlpha, invHessian, this.gradient);
 

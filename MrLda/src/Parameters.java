@@ -7,8 +7,7 @@ public class Parameters {
 	public static String pathToAlphas;
 	public static String pathToGammas;
 	public static String pathToLambdas;
-	public static String pathReducerOutput;
-	public static String pathMapperOutput;
+	public static String pathJobOutput;
 	public static String pathToGradient;
 
 
@@ -28,12 +27,11 @@ public class Parameters {
 	}
 	
 	
-	public static void setPaths(String pathAlpha, String pathGammas, String pathLambdas, String reducerPathOutput, String mapperPathOutput, String pathToGradient){
+	public static void setPaths(String pathAlpha, String pathGammas, String pathLambdas, String jobPathOutput, String pathToGradient){
 		Parameters.pathToAlphas = pathAlpha;
 		Parameters.pathToGammas = pathGammas;
 		Parameters.pathToLambdas = pathLambdas;
-		Parameters.pathReducerOutput = mapperPathOutput;
-		Parameters.pathReducerOutput = reducerPathOutput;
+		Parameters.pathJobOutput = jobPathOutput;
 		Parameters.pathToGradient = pathToGradient;
 		
 	}

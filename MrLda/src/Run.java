@@ -4,6 +4,7 @@
 import org.apache.hadoop.fs.Path;
 import org.apache.hadoop.io.*;
 import org.apache.hadoop.mapred.*;
+import org.apache.hadoop.mapreduce.Job;
 
 
 
@@ -11,23 +12,23 @@ import org.apache.hadoop.mapred.*;
 
 public class Run {
 	
-	public static void initializeAlpha(String alphaPath){
+	private static void initializeAlpha(String alphaPath){
 		/**
 		 * TODO
 		 * Set the initial value of alpha to either O or some random numbers.
 		 */
 		double[] alpha = new double[Parameters.numberOfTopics];
 		
-		//initialize to 0
+		//initialize to 0.1
 		for (int i = 0; i < alpha.length; i++) {
-			alpha[i] = 0;
+			alpha[i] = 0.1;
 		}
 		
 		FileSystemHandler.writeVector(Parameters.pathToAlphas, alpha);
 	}
 	
 	
-	public static void initializeGamma(String gammaPath){
+	private static void initializeGamma(String gammaPath){
 		//initialization with equiprobable probabilities
 		double[][] gamma = new double [Parameters.numberOfDocuments][Parameters.numberOfTopics];
 		for (int i = 0; i < gamma.length; i++) {
@@ -41,9 +42,9 @@ public class Run {
 	}
 	
 	
-	public static void initializeLambda(String lambdaPath){
+	private static void initializeLambda(String lambdaPath){
 		//initialization with equiprobable probabilities
-		double[][] lambda = new double [Parameters.numberOfTopics][Parameters.sizeOfVocabulary];
+		double[][] lambda = new double [Parameters.sizeOfVocabulary][Parameters.numberOfTopics];
 		for (int i = 0; i < lambda.length; i++) {
 			for (int j = 0; j < lambda[0].length; j++) {
 				lambda[i][j] = 1.0/Parameters.sizeOfVocabulary;
@@ -51,6 +52,29 @@ public class Run {
 		}
 		
 		FileSystemHandler.writeMatrix(Parameters.pathToLambdas, lambda);
+	}
+	
+	private static JobConf getJob(String inputPath, String outputPath) {
+		JobConf conf = new JobConf(LdaReducer.class);
+		conf.setJobName("MrLDA");
+		
+ 	
+		conf.setOutputKeyClass(Text.class);
+		conf.setOutputValueClass(DoubleWritable.class);
+		
+ 	
+		conf.setMapperClass(LdaMapper.Map.class);
+		conf.setCombinerClass(LdaReducer.Reduce.class);
+		conf.setReducerClass(LdaReducer.Reduce.class);
+ 	
+		conf.setInputFormat(TextInputFormat.class);
+		conf.setOutputFormat(TextOutputFormat.class);
+		
+ 	
+		FileInputFormat.setInputPaths(conf, new Path(inputPath));
+		FileOutputFormat.setOutputPath(conf, new Path(outputPath));
+		return conf;
+		
 	}
 	
 	public static void main(String[] args) throws Exception {
@@ -79,8 +103,7 @@ public class Run {
 		String pathAlpha = outputFolder+"/final/alpha";
 		String pathGammas = outputFolder+"/final/gamma";
 		String pathLambdas = outputFolder+"/final/lambda";
-		String reducerOutPath = outputFolder+"/temp/lambda";
-		String mapperOutPath = outputFolder+"/temp/gamma";
+		String jobOutPath = outputFolder+"/temp";
 		String pathToGradient = outputFolder+"/final/gradient";
 		
 		
@@ -91,7 +114,7 @@ public class Run {
 		Parameters.sizeOfVocabulary = Integer.parseInt(args[4]);
 		Parameters.numberOfIterations = Integer.parseInt(args[5]);
 		Parameters.numberOfMapperIteration = Integer.parseInt(args[6]);
-		Parameters.setPaths(pathAlpha, pathGammas, pathLambdas, reducerOutPath, mapperOutPath, pathToGradient);
+		Parameters.setPaths(pathAlpha, pathGammas, pathLambdas, jobOutPath, pathToGradient);
 		
 
 
@@ -99,24 +122,7 @@ public class Run {
 		
 	
 		
-		JobConf conf = new JobConf(LdaReducer.class);
-		conf.setJobName("MrLDA");
 		
- 	
-		conf.setOutputKeyClass(Text.class);
-		conf.setOutputValueClass(DoubleWritable.class);
-		
- 	
-		conf.setMapperClass(LdaMapper.Map.class);
-		conf.setCombinerClass(LdaReducer.Reduce.class);
-		conf.setReducerClass(LdaReducer.Reduce.class);
- 	
-		conf.setInputFormat(TextInputFormat.class);
-		conf.setOutputFormat(TextOutputFormat.class);
-		
- 	
-		FileInputFormat.setInputPaths(conf, new Path(inputFolder));
-		FileOutputFormat.setOutputPath(conf, new Path(Parameters.pathReducerOutput));
 		
 		
 		//We now do the algorithm : 
@@ -128,18 +134,32 @@ public class Run {
 		Run.initializeGamma(Parameters.pathToGammas);
 		Run.initializeLambda(Parameters.pathToLambdas);
 		
+		double[][] lam = FileSystemHandler.loadLambdas(pathLambdas);
+		System.out.println("Trying here.");
+		System.out.println(lam[0][0]);
 		
 		
 		while(i < Parameters.numberOfIterations){
 			i++;
-			JobClient.runJob(conf);
+			System.out.println("iteration: "+ i);
+			//FileSystemHandler.deleteReducerOutput(outputFolder+"/temp");
+			JobConf conf = getJob(inputFolder, Parameters.pathJobOutput);
+			Job job = new Job(conf);
+			job.waitForCompletion(true);
+			
 			//rewrite the files lambda and gamma to a good format
 			//and write the delta
-			FileSystemHandler.generateLambdaGammaGradient();
+			FileSystemHandler.convertJobOutputToLambdaGammaGradient(Parameters.pathJobOutput, Parameters.pathToLambdas, Parameters.pathToGammas, Parameters.pathToGradient);
 			
+			//delete the output of the reducer
+			FileSystemHandler.deletePath(Parameters.pathJobOutput);
+			
+		
 			Driver driver = new Driver();
 			driver.setNewAlpha();
 			driver.writeNewAlpha();
+			
+
 		}
 			
 	}
