@@ -1,13 +1,13 @@
 
 import java.io.BufferedReader;
 import java.io.BufferedWriter;
-import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.OutputStreamWriter;
 
 import org.apache.hadoop.conf.Configuration;
+import org.apache.hadoop.fs.FileStatus;
 import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;
 
@@ -32,10 +32,12 @@ public class FileSystemHandler {
 		try {
 			Path path = new Path(fileName);
 			FileSystem fs = getFileSystem();
-			fs.create(path, true);
+			//fs.create(path, true);
 
 			//	FSDataOutputStream outputStream = fs.create(path);
-			BufferedWriter br=new BufferedWriter(new OutputStreamWriter(fs.create(path,true)));
+			OutputStreamWriter os = new OutputStreamWriter(fs.create(path,true));
+
+			BufferedWriter br=new BufferedWriter(os);
 
 
 			String line ="";
@@ -72,11 +74,11 @@ public class FileSystemHandler {
 		try {
 			Path path = new Path(fileName);
 			FileSystem fs = getFileSystem();
-			fs.create(path, true);
+			//fs.create(path, true);
 
 			//	FSDataOutputStream outputStream = fs.create(path);
-			BufferedWriter br=new BufferedWriter(new OutputStreamWriter(fs.create(path,true)));
-
+			OutputStreamWriter os = new OutputStreamWriter(fs.create(path,true));
+			BufferedWriter br=new BufferedWriter(os);
 
 			String line ="";
 			for (int i = 0; i < vector.length; i++) {
@@ -118,7 +120,7 @@ public class FileSystemHandler {
 
 	}
 
-	
+
 	/**
 	 * takes the output of the reducers and generate the gamma file, the lambda file and the gradient file
 	 * in the good format
@@ -139,33 +141,30 @@ public class FileSystemHandler {
 		double[] delta = new double [Parameters.numberOfTopics];
 
 
-		//go throught all the files of the directory
-		File folder = new File(pathJobOutput);
-		File[] listOfFiles = folder.listFiles();
+		
+		Path path = new Path(pathJobOutput);
+		try {
+			FileSystem fs = FileSystem.get(new Configuration());
+			FileStatus[] listFileStatus = fs.listStatus(path);
 
-		for (int i = 0; i < listOfFiles.length; i++) {
-			//for each file read all the values and put them in the matrix
-			String fileName = listOfFiles[i].getPath();
-			System.out.println("file names in our methods : " + fileName);
-			if(!fileName.contains("_SUCESS") && !fileName.contains("crc")){
-				System.out.println("We are reading the files.");
+			
+			for (int i = 0; i < listFileStatus.length; i++) {
+				//for each file read all the values and put them in the matrix
+				Path fileName = listFileStatus[i].getPath();
+				if(!fileName.toString().contains("_SUCESS") && !fileName.toString().contains("crc") && !fileName.toString().contains("_logs")){
 
 
-				try {
-					System.out.println("We are trying.");
-					FileSystem fs = getFileSystem();
+					//	FileSystem fs = getFileSystem();
+					//Path path = new Path(fileName);
+					InputStreamReader is = new InputStreamReader(fs.open(fileName));
 
-					
-					BufferedReader br=new BufferedReader(new InputStreamReader(fs.open(new Path(fileName))));
+					BufferedReader br=new BufferedReader(is);
 					String line = br.readLine();
 
 
 					while (line != null) {
-						System.out.println(line);
 						String[] stringArray = line.split(",|\\s");
-						for(int i1 = 0; i1 < stringArray.length; i1 ++){
-							System.out.println(stringArray[i1]);
-						}
+
 						int keyType = new Integer(stringArray[0]);
 						if(keyType == 1) {
 							//then it is the lambda
@@ -192,31 +191,32 @@ public class FileSystemHandler {
 					writeMatrix(pathToGamma, gamma);
 
 
-				} catch (FileNotFoundException e) {
-					// TODO Auto-generated catch block
-					e.printStackTrace();
-				} catch (IOException e) {
-					// TODO Auto-generated catch block
-					e.printStackTrace();
 
 				}
-			}
+
+			}	
+		} catch (FileNotFoundException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		} catch (IOException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
 
 		}
 	}
 
-	public static double[][] loadGammas(String fileName){
-		double[][] gammas = loadMatrix(fileName, Parameters.numberOfDocuments, Parameters.numberOfTopics);
+	public static double[][] loadGammas(String fileName, int numberOfDocuments,int numberOfTopics){
+		double[][] gammas = loadMatrix(fileName,numberOfDocuments, numberOfTopics);
 		return gammas;
 	}
 
-	public static double[][] loadLambdas(String fileName){
-		double[][] lambdas = loadMatrix(fileName, Parameters.sizeOfVocabulary, Parameters.numberOfTopics);
+	public static double[][] loadLambdas(String fileName, int sizeVocab, int numberOfTopics){
+		double[][] lambdas = loadMatrix(fileName, sizeVocab, numberOfTopics);
 		return lambdas;
 	}
 
-	public static double[] loadAlpha(String fileName){
-		double[]alpha = loadVector(fileName, Parameters.numberOfTopics);
+	public static double[] loadAlpha(String fileName, int numberOfTopics){
+		double[]alpha = loadVector(fileName, numberOfTopics);
 		return alpha;
 	}
 
@@ -229,8 +229,9 @@ public class FileSystemHandler {
 		BufferedReader br;
 		try {
 			FileSystem fs = getFileSystem();
-
-			br=new BufferedReader(new InputStreamReader(fs.open(new Path(fileName))));
+			Path path = new Path(fileName);
+			InputStreamReader is = new InputStreamReader(fs.open(path));
+			br=new BufferedReader(is);
 
 			String line=br.readLine();
 
@@ -267,37 +268,36 @@ public class FileSystemHandler {
 	private static double[][] loadMatrix(String fileName, int sizeRows, int sizeColumns) {
 		BufferedReader br;
 		try {
+		
 			FileSystem fs = getFileSystem();
+			Path path = new Path(fileName);
+			InputStreamReader is = new InputStreamReader(fs.open(path));
 
-			br=new BufferedReader(new InputStreamReader(fs.open(new Path(fileName))));
+			br=new BufferedReader(is);
 
 			String line=br.readLine();
-			System.out.println("We have succesfully read the line." + line);
 
 			double[][] matrix = new double[sizeRows][sizeColumns];
 			int ind = 0;
 			while (line != null) {
-				System.out.println("Out line is not null");
-				System.out.println("the line is : " + line );
+
 				String[] stringArray = line.split(" ");
 				double[] row = new double[sizeColumns];
 
 				for (int i = 0; i < stringArray.length; i++) {
-					System.out.println("*"+stringArray[i]+"*");
 					Double val = Double.valueOf(stringArray[i]);
 					row[i] = (double)val;
-					System.out.println("row : " + i + " " + row[i]);
 				}
 
 				matrix[ind] = row;
 				ind++;
 
 				line = br.readLine();
-				
+
 			}
 
 			if (ind != matrix.length) {
-				System.out.println("Problem.");
+				
 				throw new IndexOutOfBoundsException();
 			}
 

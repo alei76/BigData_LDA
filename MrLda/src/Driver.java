@@ -29,7 +29,7 @@ public class Driver {
 		/**
 		 * TODO
 		 */
-		oldAlpha = FileSystemHandler.loadAlpha(Parameters.pathToAlphas);
+		oldAlpha = FileSystemHandler.loadAlpha(Parameters.pathToAlphas, K);
 	}
 	
 	public double[] retrieveReducerOutput(){
@@ -46,8 +46,7 @@ public class Driver {
 	public void setHessian(){
 
 		double nonDiag = D*MathFunctions.trigamma(sumAlpha());
-		System.out.println(sumAlpha());
-		System.out.println("NON DIAG : " + nonDiag);
+		
 		for(int i = 0; i < K; i++){
 			for(int j = 0; j < K; j++){
 				if(i==j){
@@ -57,7 +56,7 @@ public class Driver {
 					hessian[i][j] = nonDiag;
 					
 				}
-				System.out.println("Hessian : " + hessian[i][j]);
+				
 			}
 		}
 		

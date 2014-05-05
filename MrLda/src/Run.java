@@ -34,7 +34,6 @@ public class Run {
 		for (int i = 0; i < gamma.length; i++) {
 			for (int j = 0; j < gamma[0].length; j++) {
 				gamma[i][j] = (1.0/Parameters.numberOfTopics);
-				System.out.println(gamma[i][j]);
 			}
 		}
 		
@@ -98,13 +97,23 @@ public class Run {
 		
 		String inputFolder = args[0];
 		String outputFolder = args[1];
+		System.out.println("********************************* MR LDA CONFIGURATIONS ********************************************************");
+		System.out.println("Input Folder : " + inputFolder);
+		System.out.println("Output Folder :  " + outputFolder);
 		
 		//These to be set and discussed beforehand.
 		String pathAlpha = outputFolder+"/final/alpha";
+		
+		System.out.println("Path to alpha : " + pathAlpha);
 		String pathGammas = outputFolder+"/final/gamma";
+		
+		System.out.println("Path to gamma : " + pathGammas);
 		String pathLambdas = outputFolder+"/final/lambda";
+		System.out.println("Path to lambda : " + pathLambdas);
 		String jobOutPath = outputFolder+"/temp";
+		System.out.println("Job output path : " + jobOutPath);
 		String pathToGradient = outputFolder+"/final/gradient";
+		System.out.println("Path to gradient : " + pathToGradient);
 		
 		
 		//The Parameters class is set once and for all.
@@ -118,8 +127,13 @@ public class Run {
 		
 
 
+		System.out.println("Number of topics : " + Parameters.numberOfTopics);
+		System.out.println("Number of documents : " + Parameters.numberOfDocuments);
+		System.out.println("Size of vocabulary : " + Parameters.sizeOfVocabulary);
+		System.out.println("Number of iterations : " + Parameters.numberOfIterations);
+		System.out.println("Number of mapper iterations : " + Parameters.numberOfMapperIteration);
 		
-		
+		System.out.println("***********************************************************************************************************************");
 	
 		
 		
@@ -134,21 +148,33 @@ public class Run {
 		Run.initializeGamma(Parameters.pathToGammas);
 		Run.initializeLambda(Parameters.pathToLambdas);
 		
-		double[][] lam = FileSystemHandler.loadLambdas(pathLambdas);
+		/**System.out.println("Small test for loadLambdas.");
+		double[][] lam = FileSystemHandler.loadLambdas(Parameters.pathToLambdas);
 		System.out.println("Trying here.");
 		System.out.println(lam[0][0]);
 		
-		
+		*/
 		while(i < Parameters.numberOfIterations){
 			i++;
 			System.out.println("iteration: "+ i);
 			//FileSystemHandler.deleteReducerOutput(outputFolder+"/temp");
 			JobConf conf = getJob(inputFolder, Parameters.pathJobOutput);
+			conf.setNumMapTasks(100);
+			conf.set("pathToAlphas", Parameters.pathToAlphas);
+			conf.set("pathToGammas", Parameters.pathToGammas);
+			conf.set("pathToLambdas", Parameters.pathToLambdas);
+			conf.set("sizeOfVocabulary", ""+Parameters.sizeOfVocabulary);
+			conf.set("numberOfDocuments","" + Parameters.numberOfDocuments);
+			conf.set("numberOfTopics", "" + Parameters.numberOfTopics);
+			conf.set("numberOfIterations","" +Parameters.numberOfIterations);
 			Job job = new Job(conf);
+			
+			job.setNumReduceTasks(75);
 			job.waitForCompletion(true);
 			
 			//rewrite the files lambda and gamma to a good format
 			//and write the delta
+			
 			FileSystemHandler.convertJobOutputToLambdaGammaGradient(Parameters.pathJobOutput, Parameters.pathToLambdas, Parameters.pathToGammas, Parameters.pathToGradient);
 			
 			//delete the output of the reducer
