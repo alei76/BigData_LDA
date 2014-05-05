@@ -79,23 +79,7 @@ public class LdaMapper {
 			return num < numberOfMaxGammaIterations ;
 
 		}
-		//Sum to 1;
-		//Not quite sure about this : lambda_v,* has to sum to 1 ?
-		//IMPORTANT ** Khalil: For me, for each topic, the sum over the words of lambdas have to sum to 1
-		//so it should be in the other way round. Remove my comment after u have red it.
-		private void normalizeLambda(){
-			double sum = 0.0;
-			for (int i = 0; i < lambda.length; i++) {
-				for(int j = 0; j < lambda[0].length; j++){
-					sum += lambda[i][j];
-				}
-
-				for(int j = 0; j < lambda[0].length; j++){
-					lambda[i][j] = lambda[i][j]/sum;
-				}
-
-			}
-		}
+		
 
 		private double[] normalizePhiV(double[] phiV, double sum){
 
@@ -122,7 +106,7 @@ public class LdaMapper {
 			 * Read from file the value of lambda
 			 */
 			lambda = FileSystemHandler.loadLambdas(pathToLambdas, V, K);
-
+		
 
 
 		}

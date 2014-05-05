@@ -182,6 +182,19 @@ public class FileSystemHandler {
 						line=br.readLine();
 
 					}
+					//normalize lambda
+					double sum = 0.0;
+
+					for(int k = 0; k < lambda[0].length; k++){
+						for (int v = 0; v < lambda.length; v++) {
+							sum += lambda[v][k];
+						}
+
+						for(int v = 0; v < lambda.length; v++){
+							lambda[v][k] = lambda[v][k]/sum;
+						}
+
+					}
 
 					//do the write
 					writeMatrix(pathToLambda, lambda);
