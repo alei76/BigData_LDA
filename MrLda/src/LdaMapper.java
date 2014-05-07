@@ -26,6 +26,11 @@ public class LdaMapper {
 			pathToAlphas = job.get("pathToAlphas");
 			pathToGammas = job.get("pathToGammas");
 			pathToLambdas = job.get("pathToLambdas");
+			
+			//initialize the variables
+			retrieveLambda();
+			retrieveGamma();
+			retrieveAlpha();
 
 		}
 		
@@ -84,7 +89,7 @@ public class LdaMapper {
 		private double[] normalizePhiV(double[] phiV, double sum){
 
 			for (int i = 0; i < phiV.length; i++) {
-				phiV[i] = phiV[i]/sum;
+				phiV[i] = phiV[i]/(double)sum;
 			}
 			return phiV;
 		}
@@ -106,7 +111,16 @@ public class LdaMapper {
 			 * Read from file the value of lambda
 			 */
 			lambda = FileSystemHandler.loadLambdas(pathToLambdas, V, K);
-		
+			for(int k = 0; k < lambda[0].length; k++){
+				double sum = 0.0;
+				for (int v = 0; v < lambda.length; v++) {
+					sum += lambda[v][k];
+				}
+				for(int v = 0; v < lambda.length; v++){
+					lambda[v][k] = lambda[v][k]/(double)sum;
+				}
+
+			}
 
 
 		}
@@ -126,6 +140,7 @@ public class LdaMapper {
 			 * Read from file the value of Alpha
 			 */
 			alpha = FileSystemHandler.loadAlpha(pathToAlphas, K);
+			
 		}
 
 
@@ -147,9 +162,7 @@ public class LdaMapper {
 
 
 			//We retrieve the values.
-			retrieveLambda();
-			retrieveGamma();
-			retrieveAlpha();
+			
 			setPhiSigma();
 
 			//We need to parse the line to fill in an array of the words in the doc :
@@ -160,15 +173,16 @@ public class LdaMapper {
 			for (int i = 0; i < wordsInDocTemp.length; i++) {
 				wordsInDoc[i] = Integer.parseInt(wordsInDocTemp[i]);
 			}
+			
 			//We need to keep the sum over v of all lambdas.
-			double[] sumLambda = new double[K];
+			/*double[] sumLambda = new double[K];
 
 			for (int v = 0; v < V; v++) {
 				for (int k = 0; k < K; k++) {
 					sumLambda[k] += lambda[v][k];
 				}
 
-			}
+			}*/
 
 			//We need to keep track of convergence
 			boolean notConverged = true;
@@ -184,7 +198,9 @@ public class LdaMapper {
 				for (int v = 0; v < V; v++) {
 					double sumPhi = 0;
 					for (int k = 0; k < K; k++) {
-						phi[v][k] = lambda[v][k]*Math.exp(MathFunctions.diGamma(gamma[documentId][k]))/sumLambda[k];
+						//phi[v][k] = lambda[v][k]*Math.exp(MathFunctions.diGamma(gamma[documentId][k]))/sumLambda[k];
+						phi[v][k] = lambda[v][k]*Math.exp(MathFunctions.diGamma(gamma[documentId][k]));
+
 						sumPhi = sumPhi + phi[v][k];
 					}
 					phi[v] = normalizePhiV(phi[v], sumPhi);
@@ -220,7 +236,7 @@ public class LdaMapper {
 			for(int k = 0; k < K; k++){
 
 				outputKey.set("2,"+ (-1) + "," + k);
-
+				
 				//write of the gradient to the reducer
 				outputValue.set(MathFunctions.diGamma(gamma[documentId][k]) - MathFunctions.diGamma(sumGamma));
 				output.collect(outputKey, outputValue);

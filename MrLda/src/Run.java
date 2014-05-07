@@ -55,13 +55,10 @@ public class Run {
 	
 	private static JobConf getJob(String inputPath, String outputPath) {
 		JobConf conf = new JobConf(LdaReducer.class);
-		conf.setJobName("MrLDA");
 		
  	
 		conf.setOutputKeyClass(Text.class);
 		conf.setOutputValueClass(DoubleWritable.class);
-		
- 	
 		conf.setMapperClass(LdaMapper.Map.class);
 		conf.setCombinerClass(LdaReducer.Reduce.class);
 		conf.setReducerClass(LdaReducer.Reduce.class);
@@ -148,27 +145,25 @@ public class Run {
 		Run.initializeGamma(Parameters.pathToGammas);
 		Run.initializeLambda(Parameters.pathToLambdas);
 		
-		/**System.out.println("Small test for loadLambdas.");
-		double[][] lam = FileSystemHandler.loadLambdas(Parameters.pathToLambdas);
-		System.out.println("Trying here.");
-		System.out.println(lam[0][0]);
 		
-		*/
+		
+		
 		while(i < Parameters.numberOfIterations){
 			i++;
 			System.out.println("iteration: "+ i);
 			//FileSystemHandler.deleteReducerOutput(outputFolder+"/temp");
 			JobConf conf = getJob(inputFolder, Parameters.pathJobOutput);
-			conf.setNumMapTasks(100);
+			conf.setJobName("LDA: v=54468, iteration="+i);
+			conf.setNumMapTasks(75);
 			conf.set("pathToAlphas", Parameters.pathToAlphas);
 			conf.set("pathToGammas", Parameters.pathToGammas);
 			conf.set("pathToLambdas", Parameters.pathToLambdas);
 			conf.set("sizeOfVocabulary", ""+Parameters.sizeOfVocabulary);
 			conf.set("numberOfDocuments","" + Parameters.numberOfDocuments);
 			conf.set("numberOfTopics", "" + Parameters.numberOfTopics);
-			conf.set("numberOfIterations","" +Parameters.numberOfIterations);
-			Job job = new Job(conf);
+			conf.set("numberOfIterations","" +Parameters.numberOfMapperIteration);
 			
+			Job job = new Job(conf);
 			job.setNumReduceTasks(75);
 			job.waitForCompletion(true);
 			
@@ -177,7 +172,9 @@ public class Run {
 			
 			FileSystemHandler.convertJobOutputToLambdaGammaGradient(Parameters.pathJobOutput, Parameters.pathToLambdas, Parameters.pathToGammas, Parameters.pathToGradient);
 			
+
 			//delete the output of the reducer
+			
 			FileSystemHandler.deletePath(Parameters.pathJobOutput);
 			
 		

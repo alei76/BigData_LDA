@@ -66,8 +66,9 @@ public class Driver {
 
 		
 		double[] rDelta = retrieveReducerOutput();
-		double alphaSummed = MathFunctions.diGamma(sumAlpha());
+		double alphaSummed = MathFunctions.diGamma(sumAlpha());	
 		for(int i = 0; i<K; i++){
+			
 			gradient[i] = D*(alphaSummed - MathFunctions.diGamma(oldAlpha[i])) + rDelta[i];
 		}
 	}

@@ -21,6 +21,7 @@ public class LdaReducer {
 			
 			while(values.hasNext()){
 				tempSum += values.next().get();
+				
 			}
 			outputValue.set(tempSum);
 			output.collect(key, outputValue);

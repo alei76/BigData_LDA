@@ -161,17 +161,18 @@ public class FileSystemHandler {
 					BufferedReader br=new BufferedReader(is);
 					String line = br.readLine();
 
-
 					while (line != null) {
 						String[] stringArray = line.split(",|\\s");
 
 						int keyType = new Integer(stringArray[0]);
 						if(keyType == 1) {
 							//then it is the lambda
+							
 							lambda[new Integer(stringArray[2])][new Integer(stringArray[1])]= new Double(stringArray[3]);
 						} else if(keyType == 2) {
 							//then it is the delta
-							delta[new Integer(stringArray[2])] = new Double(stringArray[2]);
+
+							delta[new Integer(stringArray[2])] = new Double(stringArray[3]);
 						} else if(keyType == 3) {
 							//then it is the gamma
 							gamma[new Integer(stringArray[2])][new Integer(stringArray[1])]= new Double(stringArray[3]);
@@ -183,18 +184,8 @@ public class FileSystemHandler {
 
 					}
 					//normalize lambda
-					double sum = 0.0;
 
-					for(int k = 0; k < lambda[0].length; k++){
-						for (int v = 0; v < lambda.length; v++) {
-							sum += lambda[v][k];
-						}
-
-						for(int v = 0; v < lambda.length; v++){
-							lambda[v][k] = lambda[v][k]/sum;
-						}
-
-					}
+		
 
 					//do the write
 					writeMatrix(pathToLambda, lambda);
